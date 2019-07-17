@@ -8,10 +8,10 @@ class Game extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      field: [...Array(props.sizeY)].map(() => [...Array(props.sizeX)]),
-      cross: true,
+      field: props.field || [...Array(props.sizeY)].map(() => [...Array(props.sizeX)]),
+      cross: props.cross || true,
       win: false,
-      matchToWin: 5,
+      matchToWin: props.matchToWin || 5,
       escPressed: false,
     };
   }
@@ -39,16 +39,16 @@ class Game extends Component {
 
   getDiagonale = (field, rowIndex, cellIndex, isMain) => {
     const { matchToWin } = this.state;
-
-    return [...Array(matchToWin * 2 + 1)].map((_, i) => {
+    const a = [...Array(matchToWin * 2 + 1)].map((_, i) => {
       const row = rowIndex + i - matchToWin;
       const cell = isMain ? cellIndex + i - matchToWin : cellIndex - i + matchToWin;
 
-      if (row >= 0 && row < field.length && cell >= 0 && cell < field.length) {
+      if (row >= 0 && row < field.length && cell >= 0 && cell < field[row].length) {
         return field[row][cell];
       }
       return undefined;
     });
+    return a;
   };
 
   winCondition = (field, rowIndex, cellIndex) => {
@@ -75,7 +75,8 @@ class Game extends Component {
           localStorage.setItem('sizeX', sizeX);
           localStorage.setItem('sizeY', sizeY);
           localStorage.setItem('matchToWin', state.matchToWin);
-          localStorage.setItem('cross', cross);
+          console.log(!cross);
+          localStorage.setItem('cross', !cross);
         } else localStorage.clear();
 
         return { field, cross: !cross, win };
@@ -85,7 +86,13 @@ class Game extends Component {
 
   restart = () => {
     const { sizeX, sizeY } = this.props;
-    this.setState({ field: [...Array(sizeY)].map(() => [...Array(sizeX)]), cross: true, win: false });
+    localStorage.clear();
+    this.setState({
+      field: [...Array(sizeY)].map(() => [...Array(sizeX)]),
+      cross: true,
+      win: false,
+      escPressed: false,
+    });
   };
 
   handleEscKey = e => {
@@ -100,7 +107,6 @@ class Game extends Component {
     const { sizeX, sizeY, quit } = this.props;
     const { field, cross, win, escPressed } = this.state;
     const cellSize = 40;
-
     if (win) return <h1>{`Congrats, ${cross ? 'circle' : 'cross'}!`}</h1>;
     return (
       <div className="game">
@@ -156,14 +162,20 @@ class Game extends Component {
 }
 
 Game.propTypes = {
+  field: PropTypes.instanceOf(Array),
   sizeX: PropTypes.number,
   sizeY: PropTypes.number,
   quit: PropTypes.func.isRequired,
+  cross: PropTypes.bool,
+  matchToWin: PropTypes.number,
 };
 
 Game.defaultProps = {
+  field: undefined,
   sizeX: 10,
   sizeY: 10,
+  cross: true,
+  matchToWin: 5,
 };
 
 export default Game;
