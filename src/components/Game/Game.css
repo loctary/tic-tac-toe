@@ -11,9 +11,9 @@
 
 .game {
   position: absolute;
-  top: 20%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, 20px);
+  text-align: center; 
 }
 
 .btn:hover {
@@ -24,28 +24,20 @@ button:focus {
   outline: none;
 }
 
-html {
-  -webkit-touch-callout: none; /* iOS Safari */
-  -webkit-user-select: none; /* Safari */
-  -khtml-user-select: none; /* Konqueror HTML */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none;
-} 
-
-td {
-  width: 20px;
-  height: 20px;
-  border: 1px solid black; 
-}
-
 .menu {
   position: absolute;
-  top: 10%;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  top: 0; 
+  transform: translate(-50%, 60px);
   background: #fff;
   border: 1px solid black;
   padding: 20px;
+  width: 350px;
+}
+
+.menu h1 {
+  white-space: -moz-pre-wrap; /* Firefox */
+  white-space: -o-pre-wrap; /* Opera */
+  white-space: pre-wrap; /* Chrome */
+  word-wrap: break-word; /* IE */
 }
