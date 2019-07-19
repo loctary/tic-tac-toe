@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { debounce } from 'lodash';
+
 import Game from './components/Game/Game';
 
 import './App.css';
@@ -15,7 +16,11 @@ class App extends Component {
   };
 
   handleChange = debounce((label, value) => {
-    this.setState({ [label]: value });
+    let replacedValue = value;
+    if (!value) replacedValue = 10;
+    if (value < 5) replacedValue = 5;
+    if (value > 80) replacedValue = 80;
+    this.setState({ [label]: replacedValue });
   }, 300);
 
   componentDidMount() {

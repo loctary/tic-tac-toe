@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Stage, Layer, Rect, Text } from 'react-konva';
+import { Stage, Layer, Rect, Text, Line } from 'react-konva';
 
 import './Game.css';
 
@@ -14,6 +14,7 @@ class Game extends Component {
       isGameDrawn: false,
       isMenuShowed: false,
       matchToWin: props.matchToWin,
+      winCoordinates: [],
     };
   }
 
@@ -25,33 +26,93 @@ class Game extends Component {
     document.removeEventListener('keydown', this.handleEscKey);
   }
 
-  checkWin = array => {
+  checkWin = (array, isGettingCoordinates = false) => {
+    // checks if array has certain number of ident elements in row and returns either boolean result
+    // or position of those elements in array (depends on isGettingCoordinates)
     const { matchToWin } = this.state;
     let inRow = 1;
-
+    const coordinates = [0];
     array.slice().reduce((a, b, _, currentReducedArray) => {
       if (a && a === b) inRow += 1;
-      else inRow = 1;
-      if (inRow === matchToWin) currentReducedArray.splice(1);
+      else {
+        coordinates[0] += 1;
+        inRow = 1;
+      }
+      if (inRow === matchToWin) {
+        coordinates[1] = coordinates[0] + 4;
+        currentReducedArray.splice(1);
+      }
       return b;
     });
+    if (isGettingCoordinates) return coordinates;
     return inRow === matchToWin;
   };
 
   checkDraw = field => field.map(row => row.filter(x => !x)).filter(y => y.length !== 0).length === 0;
 
   getDiagonale = (field, rowIndex, cellIndex, isMain) => {
-    const { matchToWin } = this.state;
-    const a = [...Array(matchToWin * 2 + 1)].map((_, i) => {
-      const row = rowIndex + i - matchToWin;
-      const cell = isMain ? cellIndex + i - matchToWin : cellIndex - i + matchToWin;
+    // gets diagonale depending on certain position. isMain parameter says if it's main or off diagonale
+    const biggerShape = field.length >= field[0].length ? field.length : field[0].length;
+    const diagonale = [];
 
-      if (row >= 0 && row < field.length && cell >= 0 && cell < field[row].length) {
-        return field[row][cell];
-      }
-      return undefined;
+    [...Array(biggerShape * 2 + 1)].forEach((_, i) => {
+      const row = rowIndex + i - biggerShape;
+      const cell = isMain ? cellIndex + i - biggerShape : cellIndex - i + biggerShape;
+
+      if (row >= 0 && row < field.length && cell >= 0 && cell < field[row].length) diagonale.push(field[row][cell]);
     });
-    return a;
+    return diagonale;
+  };
+
+  getDiagonaleStartCoordinates = (x, y) => {
+    // calculating start points of main and off diagonale return [mainX, mainY, offX, offY]
+    const { sizeX } = this.props;
+    const coordinates = [];
+    let mainX = x;
+    let mainY = y;
+    let offX = x;
+    let offY = y;
+    while (mainX >= 0 && mainY >= 0) {
+      coordinates[0] = mainX;
+      mainX -= 1;
+      coordinates[1] = mainY;
+      mainY -= 1;
+    }
+    while (offX < sizeX && offY >= 0) {
+      coordinates[2] = offX;
+      offX += 1;
+      coordinates[3] = offY;
+      offY -= 1;
+    }
+    return coordinates;
+  };
+
+  getWinCoordinates = (field, rowIndex, cellIndex) => {
+    const diagMain = this.getDiagonale(field, rowIndex, cellIndex, true); // getting array of items of main diagonale
+    const diagOff = this.getDiagonale(field, rowIndex, cellIndex, false); // getting array of items of off diagonale
+    const diagonaleStartCoordinates = this.getDiagonaleStartCoordinates(cellIndex, rowIndex);
+
+    const rowCoords = this.checkWin(field[rowIndex], true); // getting winning coordinates of row
+    const colCoords = this.checkWin(field.map(x => x[cellIndex]), true); // getting winning coordinates of column
+    const diagMainCoords = this.checkWin(diagMain, true); // getting winning coordinates of main diagonale
+    const diagOffCoords = this.checkWin(diagOff, true); // getting winning coordinates of off diagonale
+
+    // calculating position of start and end points of crossing line return [startX, startY, endX. endY]
+    if (rowCoords[1]) return [rowCoords[0], rowIndex + 0.5, rowCoords[1] + 1, rowIndex + 0.5];
+    if (colCoords[1]) return [cellIndex + 0.5, colCoords[0], cellIndex + 0.5, colCoords[1] + 1];
+    if (diagMainCoords[1])
+      return [
+        diagMainCoords[0] - diagonaleStartCoordinates[0],
+        diagonaleStartCoordinates[1] + diagMainCoords[0],
+        diagonaleStartCoordinates[0] + diagMainCoords[1] + 1,
+        diagonaleStartCoordinates[1] + diagMainCoords[1] + 1,
+      ];
+    return [
+      diagonaleStartCoordinates[2] - diagOffCoords[0] + 1,
+      diagonaleStartCoordinates[3] + diagOffCoords[0],
+      diagonaleStartCoordinates[2] - diagOffCoords[1],
+      diagonaleStartCoordinates[3] + diagOffCoords[1] + 1,
+    ];
   };
 
   winCondition = (field, rowIndex, cellIndex) => {
@@ -64,24 +125,33 @@ class Game extends Component {
   };
 
   handleClick = (rowIndex, cellIndex) => {
-    const { state } = this;
-    const { sizeX, sizeY } = this.props;
+    const {
+      state,
+      props: { sizeX, sizeY },
+    } = this;
 
     if (!state.field[rowIndex][cellIndex] && !state.isGameWon && !state.isGameDrawn) {
       this.setState(prevState => {
         const { field, isCrossTurn } = prevState;
+        let winCoordinates = [];
 
+        // puts either cross or circle in empty field
         field[rowIndex][cellIndex] = isCrossTurn ? 'x' : 'o';
         const isGameWon = this.winCondition(field, rowIndex, cellIndex);
         const isGameDrawn = this.checkDraw(field);
+        // if game isn't finished keeping result in localStorage
         if (!isGameWon && !isGameDrawn) {
           localStorage.setItem('field', JSON.stringify(field));
           localStorage.setItem('sizeX', sizeX);
           localStorage.setItem('sizeY', sizeY);
           localStorage.setItem('matchToWin', state.matchToWin);
           localStorage.setItem('isCrossTurn', !isCrossTurn);
-        } else localStorage.clear();
-        return { field, isCrossTurn: !isCrossTurn, isGameWon, isGameDrawn };
+        } else {
+          // if game is finished getting and setting winCoordinates
+          localStorage.clear();
+          winCoordinates = this.getWinCoordinates(field, rowIndex, cellIndex);
+        }
+        return { field, isCrossTurn: !isCrossTurn, isGameWon, isGameDrawn, winCoordinates };
       });
     }
   };
@@ -95,6 +165,7 @@ class Game extends Component {
       isGameWon: false,
       isGameDrawn: false,
       isMenuShowed: false,
+      winCoordinates: [],
     });
   };
 
@@ -108,7 +179,7 @@ class Game extends Component {
 
   render() {
     const { sizeX, sizeY, quit } = this.props;
-    const { field, isCrossTurn, isGameWon, isGameDrawn, isMenuShowed } = this.state;
+    const { field, isCrossTurn, isGameWon, isGameDrawn, isMenuShowed, winCoordinates } = this.state;
     const CELL_SIZE = 40;
 
     return (
@@ -147,6 +218,7 @@ class Game extends Component {
                 </React.Fragment>
               ))
             )}
+            {winCoordinates.length !== 0 && <Line stroke="black" points={winCoordinates.map(i => i * CELL_SIZE)} />}
           </Layer>
         </Stage>
 
