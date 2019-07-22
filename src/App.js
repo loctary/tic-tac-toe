@@ -19,7 +19,7 @@ class App extends Component {
     let replacedValue = value;
     if (!value) replacedValue = 10;
     if (value < 5) replacedValue = 5;
-    if (value > 80) replacedValue = 80;
+    if (value > 80) replacedValue = 30;
     this.setState({ [label]: replacedValue });
   }, 300);
 

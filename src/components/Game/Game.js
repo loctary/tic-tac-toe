@@ -50,22 +50,22 @@ class Game extends Component {
 
   checkDraw = field => field.map(row => row.filter(x => !x)).filter(y => y.length !== 0).length === 0;
 
-  getDiagonale = (field, rowIndex, cellIndex, isMain) => {
-    // gets diagonale depending on certain position. isMain parameter says if it's main or off diagonale
+  getDiagonal = (field, rowIndex, cellIndex, isMain) => {
+    // gets diagonal depending on certain position. isMain parameter says if it's main or off diagonal
     const biggerShape = field.length >= field[0].length ? field.length : field[0].length;
-    const diagonale = [];
+    const diagonal = [];
 
     [...Array(biggerShape * 2 + 1)].forEach((_, i) => {
       const row = rowIndex + i - biggerShape;
       const cell = isMain ? cellIndex + i - biggerShape : cellIndex - i + biggerShape;
 
-      if (row >= 0 && row < field.length && cell >= 0 && cell < field[row].length) diagonale.push(field[row][cell]);
+      if (row >= 0 && row < field.length && cell >= 0 && cell < field[row].length) diagonal.push(field[row][cell]);
     });
-    return diagonale;
+    return diagonal;
   };
 
-  getDiagonaleStartCoordinates = (x, y) => {
-    // calculating start points of main and off diagonale return [mainX, mainY, offX, offY]
+  getDiagonalStartCoordinates = (x, y) => {
+    // calculating start points of main and off diagonal return [mainX, mainY, offX, offY]
     const { sizeX } = this.props;
     const coordinates = [];
     let mainX = x;
@@ -88,30 +88,29 @@ class Game extends Component {
   };
 
   getWinCoordinates = (field, rowIndex, cellIndex) => {
-    const diagMain = this.getDiagonale(field, rowIndex, cellIndex, true); // getting array of items of main diagonale
-    const diagOff = this.getDiagonale(field, rowIndex, cellIndex, false); // getting array of items of off diagonale
-    const diagonaleStartCoordinates = this.getDiagonaleStartCoordinates(cellIndex, rowIndex);
+    const diagMain = this.getDiagonal(field, rowIndex, cellIndex, true); // getting array of items of main diagonal
+    const diagOff = this.getDiagonal(field, rowIndex, cellIndex, false); // getting array of items of off diagonal
+    const diagonalStartCoordinates = this.getDiagonalStartCoordinates(cellIndex, rowIndex);
 
     const rowCoords = this.checkWin(field[rowIndex], true); // getting winning coordinates of row
     const colCoords = this.checkWin(field.map(x => x[cellIndex]), true); // getting winning coordinates of column
-    const diagMainCoords = this.checkWin(diagMain, true); // getting winning coordinates of main diagonale
-    const diagOffCoords = this.checkWin(diagOff, true); // getting winning coordinates of off diagonale
-
+    const diagMainCoords = this.checkWin(diagMain, true); // getting winning coordinates of main diagonal
+    const diagOffCoords = this.checkWin(diagOff, true); // getting winning coordinates of off diagonal
     // calculating position of start and end points of crossing line return [startX, startY, endX. endY]
     if (rowCoords[1]) return [rowCoords[0], rowIndex + 0.5, rowCoords[1] + 1, rowIndex + 0.5];
     if (colCoords[1]) return [cellIndex + 0.5, colCoords[0], cellIndex + 0.5, colCoords[1] + 1];
     if (diagMainCoords[1])
       return [
-        diagMainCoords[0] - diagonaleStartCoordinates[0],
-        diagonaleStartCoordinates[1] + diagMainCoords[0],
-        diagonaleStartCoordinates[0] + diagMainCoords[1] + 1,
-        diagonaleStartCoordinates[1] + diagMainCoords[1] + 1,
+        diagonalStartCoordinates[0] + diagMainCoords[0],
+        diagonalStartCoordinates[1] + diagMainCoords[0],
+        diagonalStartCoordinates[0] + diagMainCoords[1] + 1,
+        diagonalStartCoordinates[1] + diagMainCoords[1] + 1,
       ];
     return [
-      diagonaleStartCoordinates[2] - diagOffCoords[0] + 1,
-      diagonaleStartCoordinates[3] + diagOffCoords[0],
-      diagonaleStartCoordinates[2] - diagOffCoords[1],
-      diagonaleStartCoordinates[3] + diagOffCoords[1] + 1,
+      diagonalStartCoordinates[2] - diagOffCoords[0] + 1,
+      diagonalStartCoordinates[3] + diagOffCoords[0],
+      diagonalStartCoordinates[2] - diagOffCoords[1],
+      diagonalStartCoordinates[3] + diagOffCoords[1] + 1,
     ];
   };
 
@@ -119,8 +118,8 @@ class Game extends Component {
     return (
       this.checkWin(field[rowIndex]) ||
       this.checkWin(field.map(x => x[cellIndex])) ||
-      this.checkWin(this.getDiagonale(field, rowIndex, cellIndex, true)) ||
-      this.checkWin(this.getDiagonale(field, rowIndex, cellIndex, false))
+      this.checkWin(this.getDiagonal(field, rowIndex, cellIndex, true)) ||
+      this.checkWin(this.getDiagonal(field, rowIndex, cellIndex, false))
     );
   };
 
